@@ -1,0 +1,4 @@
+nextflowpy>=0.6.0
+pandas>=1.0
+biom-format>=2.1.7
+rich>=12.0.0

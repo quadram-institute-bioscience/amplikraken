@@ -22,6 +22,7 @@ databases_json = """{
   "greengenes": {
     "md5": "c66091696e1fcf35a7ac6b8fcb48bbef",
     "ver": "13.5",
+    "outdir": "16S_Greengenes_k2db",
     "url": "https://genome-idx.s3.amazonaws.com/kraken/16S_Greengenes13.5_20200326.tgz",
     "desc": "Greengenes",
     "c": "McDonald 2012",
@@ -29,6 +30,7 @@ databases_json = """{
   },
   "kraken-silva-138": {
     "md5": "94ecb2c851f3e4f02335559d42013f0f",
+    "outdir": "16S_SILVA138_k2db",
     "ver": "138",
     "desc": "SILVA release 138",
     "url": "https://genome-idx.s3.amazonaws.com/kraken/16S_Silva138_20200326.tgz",
@@ -37,6 +39,7 @@ databases_json = """{
   },
   "kraken-silva-132": {
     "url": "https://genome-idx.s3.amazonaws.com/kraken/16S_Silva132_20200326.tgz",
+    "outdir": "16S_SILVA132_k2db",
     "desc": "SILVA release 132",
     "md5": "0b6d8ed61e63210c1dc2ccdd373a9d5d",
     "ver": "132",
@@ -45,6 +48,7 @@ databases_json = """{
   },
   "kraken-rdp-115": {
     "url": "https://genome-idx.s3.amazonaws.com/kraken/16S_RDP11.5_20200326.tgz",
+    "outdir": "16S_RDP_k2db",
     "desc": "RDP release 11.5",
     "md5": "7381792a19064962741724eee188121e",
     "ver": "11.5",
@@ -112,7 +116,7 @@ def main():
     def printProgramTitleBoxed(title):
         from rich.panel import Panel
         console.print()
-        console.print(Panel("  [white]{title}[/]   ".format(title=title), style="cyan", title="Dadaist2"), justify="left")
+        console.print(Panel("  [white]{title}[/]   ".format(title=title), style="cyan", title="Amplikraken"), justify="left")
 
 
     # User home directory
@@ -123,9 +127,9 @@ def main():
 
     #   if exists default_outdir
     if os.path.exists(default_outdir):
-        default_logfile = os.path.join(default_outdir, "dadaist2-getdb.log")
+        default_logfile = os.path.join(default_outdir, "amplikraken-getdb.log")
     else:  
-        default_logfile = os.path.join(tempfile.gettempdir(), f"dadaist2-getdb-{timestamp}.log")
+        default_logfile = os.path.join(tempfile.gettempdir(), f"amplikraken-getdb-{timestamp}.log")
 
 
     import argparse
@@ -134,7 +138,7 @@ def main():
     console = Console()
     
     # Arguments
-    parser = argparse.ArgumentParser(description="Download databases for Dadaist2")
+    parser = argparse.ArgumentParser(description="Download databases for Amplikraken")
     parser.add_argument("-d", "--database", help="Database code")
     parser.add_argument("-l", "--list", action="store_true", help="List databases")
     parser.add_argument("-q", "--query", help="Query string for databases, to be used with --list or alone (instead of --database)")
@@ -145,7 +149,7 @@ def main():
     parser.add_argument("--verbose", "-v", action="count", default=0, help="Increase verbosity")
     opts = parser.parse_args()
 
-    #dadaist2.printBox("dadaist2-getdb " + __version__)
+    #Amplikraken.printBox("amplikraken-getdb " + __version__)
     
     # Set logger 
     logging.basicConfig(filename=opts.logfile, filemode="a", format="%(asctime)s - %(levelname)s: %(name)s > %(message)s")
@@ -203,12 +207,18 @@ def main():
             urls = {}
             for db in dbs:
                 if (opts.query == "all") or (opts.database and db == opts.database) or (opts.query  and (opts.query.lower() in db.lower() )):
+                    # check if database is already downloaded
+                    dest_dir = os.path.join(opts.outdir,  dbs[db]["outdir"]) if "outdir" in dbs[db] else os.path.join(opts.outdir, db)
+                    if os.path.isdir(dest_dir):
+                        term_logger.info(":white_check_mark: Database {} already downloaded".format(db), extra={"markup": True})
+                        continue
                     urls[ dbs[db]["url"] ] = dbs[db]["md5"]
+            
             if not urls:
                 term_logger.error("No databases to download!")
             else:
                 # Concurrently download databases
-                with console.status("[bold]Dadaist2[/] - Getting databases", spinner="point"):
+                with console.status("[bold]Amplikraken[/] - Getting databases", spinner="point"):
                     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                         futures = [executor.submit(download, url, os.path.join(opts.outdir), urls[url]) for url in urls]
 
@@ -216,8 +226,8 @@ def main():
             # Print usage from argparse
             parser.print_help()
             eprint()
-            eprint("Use --list to print a list of available databases (add --query STR to filter).")
-            eprint("To download, use --query STR to download multiple databases ('all' is  supported) or --database ID to download one.")
+            eprint("\nUse --list to print a list of available databases (add --query STR to filter).")
+            eprint("\nTo download, use --query STR to download multiple databases ('all' is  supported) or --database ID to download one.")
             sys.exit(0)
 
 if __name__ == "__main__":

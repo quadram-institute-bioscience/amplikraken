@@ -5,6 +5,47 @@ C	M00967:43:000000000-A3JHG:1:1101:15982:1786	1102	251|250	3:26 535:2 21:3 3:5 5
 C	M00967:43:000000000-A3JHG:1:1101:17592:2407	1102	251|250	3:27 307:1 3:8 21:1 3:1 307:8 535:1 1102:8 3:13 535:6 307:5 1102:32 3:106 |:| 3:107 1102:22 0:5 1102:5 541:5 0:62 1102:2 0:8
 """
 import pandas as pd
+import amplikraken.utils
+
+class KrakenRecord:
+    def __init__(self, line=None,status=None, readname=None, taxid=None, species=None, readlen=None, lca_string=None) -> None:
+        self.status = status
+        self.readname = readname
+        self.taxid = taxid
+        self.species = species
+        self.lenstring = readlen
+        self.lca_string = lca_string
+        self.paired = False
+        if line is not None:
+            self.from_string(line)
+        self._update()
+
+    def __len__(self):
+        if self.lenstring is not None:
+            try:
+                return int(self.lenstring.split("|")[0]) + int(self.lenstring.split("|")[1])
+            except:
+                return 0
+            
+    def from_string(self, string):
+        fields = string.split("\t")
+        if len(fields) != 5:
+            raise Exception(f"Error parsing kraken record: {string}")
+        self.status = fields[0]
+        self.readname = fields[1]
+        self.taxid, self.species = taxonomy_splitter(fields[2])
+        self.lenstring = fields[3]
+        self.lca_string = fields[4]
+        self.paired = False
+        self._update()
+
+    def _update(self):
+        self.__setattr__('paired', True if "|" in self.lenstring else False)
+
+    def __str__(self) -> str:
+        return f"{self.status}\t{self.readname}\t{self.taxid}\t{self.lenstring}\t{self.lca_string}"
+
+
 
 
 class KrakenOutput:
@@ -87,6 +128,13 @@ def taxonomy_splitter(taxonomy_string):
     Input: 'Bacteria (taxid 3)'
     Output: 3, Bacteria
     """
+    # If taxonomy_string is a number, return it, None
+    try:
+        taxid = int(taxonomy_string)
+        return taxid, None
+    except:
+        pass
+
     # Check format "STRING (taxid INT)"
     if not taxonomy_string.endswith(")"):
         raise Exception(f"Error parsing taxonomy string {taxonomy_string}: does not end with `)`")

@@ -26,3 +26,6 @@ def _has_tool(binary, switch=None):
             continue
     return False
  
+def list_to_string(l):
+    # Concert all elements to string and None to ""
+    return [str(x) if x is not None else "" for x in l]

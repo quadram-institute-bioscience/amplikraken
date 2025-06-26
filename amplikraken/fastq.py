@@ -39,7 +39,7 @@ class FastqDataset:
             return f"SE:{self.name} -> {fwd}"
         
     def __repr__(self) -> str:
-        f"FastqDataset({self.name}, {self.forward}, {self.reverse})"
+        return f"FastqDataset({self.name}, {self.forward}, {self.reverse})"
         
     def _update(self):
         if self.forward is not None and os.path.isfile(self.forward):
@@ -65,8 +65,9 @@ class FastqDataset:
             self.valid = False
 
     def __eq__(self, __value: object) -> bool:
-        if self.forward == __value.forward and self.reverse == __value.reverse:
-            return True
+        if isinstance(__value, FastqDataset):
+            return self.forward == __value.forward and self.reverse == __value.reverse
+        return NotImplemented
         
     
     def __lt__(self, __value: object) -> bool:

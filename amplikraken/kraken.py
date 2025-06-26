@@ -147,8 +147,10 @@ def taxonomy_splitter(taxonomy_string):
     # Check if taxid is an integer
     try:
         taxid = int(taxonomy_string[1])
-    except:
-        raise Exception(f"Error parsing taxonomy string {taxonomy_string}: taxid {taxid} is not an integer")
+    except ValueError:
+        raise Exception(
+            f"Error parsing taxonomy string {taxonomy_string}: taxid {taxonomy_string[1]} is not an integer"
+        )
     
     return taxid, taxonomy_string[0]
     
